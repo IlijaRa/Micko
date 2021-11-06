@@ -1,3 +1,2 @@
 # Micko!
-
-[Screenshot_2](https://user-images.githubusercontent.com/64584067/140610907-a595303e-7990-49f8-b30d-745de6817851.png)
+![Screenshot_2](https://user-images.githubusercontent.com/64584067/140610933-094640a5-4143-4e5e-8518-4c2b733b3db0.png)
