@@ -1,12 +1,14 @@
 //OPIS: inkrement kao izraz
 //RETURN: 3
 
-//int y;
+int y;
 
 int main() {
-    int x, y;
-    x = 3;
-    y = x++ + x++ + 42;
-    return x + y;
+    int a, b, x;
+    a = 15;
+    b = 15;
+    x = (a == b) ? 1 : -1;
+
+    return x;
 }
 

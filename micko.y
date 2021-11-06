@@ -121,7 +121,7 @@ global_var
 			code("\n%s:\n\t\tWORD\t1", $2);
 		}
 	}
-        | _TYPE _ID _ASSIGN literal _SEMICOLON
+        /*| _TYPE _ID _ASSIGN literal _SEMICOLON
 	{
 		if($1 == VOID)
 	  		err("global variable cannot be of VOID type");
@@ -138,7 +138,7 @@ global_var
               				err("redefinition of '%s'", $2);
 	  		}
         	}
-	}
+	}*/
 	;
 
 
@@ -400,10 +400,10 @@ assignment_statement
         int idx = lookup_symbol($1, VAR|PAR|GVAR);
         if(idx == NO_INDEX)
           err("invalid lvalue '%s' in assignment\n", $1);
-	else
-          if(get_type(idx) != get_type($3))
-            err("incompatible types in assignment\n");
- 
+	//else
+        if(get_type(idx) != get_type($3))
+          err("incompatible types in assignment\n");
+	  
         gen_mov($3, idx);
 
 	// pitati asistentkinju da li se moze odraditi na ovaj nacin
@@ -454,7 +454,7 @@ exp
       }
   | _ID _ASSIGN exp
       {
-	if(($$ = lookup_symbol($1, (VAR|PAR))) == -1)
+	if(($$ = lookup_symbol($1, (VAR|PAR|GVAR))) == -1)
           err("'%s' undeclared", $1);
       }
   | function_call
