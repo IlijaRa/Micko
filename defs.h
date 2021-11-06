@@ -38,7 +38,7 @@ static char *ar_instructions[] = { "ADDS", "SUBS", "MULS", "DIVS",
 //konstante relacionih operatora
 enum relops { LT, GT, LE, GE, EQ, NE, RELOP_NUMBER };
 
-//konstante relacionih operatora
+//konstante logickih operatora
 enum logops { AND, OR, LOGOP_NUMBER };
 
 //stringovi za JMP narebu

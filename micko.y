@@ -45,8 +45,9 @@
   int arg_array[MAXCOL] = {0}; // niz u koji se smestaju tipovi argumenata iz poziva funkcije
   int arr_counter = 0; // uz pomoc njega se smestaju ove vrednosti u nizove param_array i arg_array  
 
-  
+  int ids_ordinal_number = 0; // cuva redni broj promenljive
 
+  int number_of_increments = 0; // cuva broj incrementa koji se nalaze u assignment_statementu kako bi znao koliko posle treba da doda na rezultat, jer se prvo racuna numericki izraz pa onda increment
 %}
 
 %union {
@@ -367,11 +368,25 @@ branches
   ;
 
 increment_statement
-  : _ID _INCREMENT _SEMICOLON
+  : _ID 
+      {
+	$<i>$ = ++lab_num;
+	code("\n@Increment%d:", lab_num); 
+	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR));
+      }
+    _INCREMENT
+      {
+	code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number, 1, 4*ids_ordinal_number);
+      }
+    _SEMICOLON
       {
 	int idx=lookup_symbol($1, VAR|PAR|GVAR);
 	if(idx == NO_INDEX)
-	  err("'%s' undeclared", $1); 
+	  err("'%s' undeclared", $1);
+	
+	//code("\n\t\tSUBS\t%%15,$%d,%%15", 4*var_num);
+        //code("\n\t\tJMP\t@%s_body", get_name(fun_idx));
+
       }
   ;
 
@@ -388,7 +403,12 @@ assignment_statement
 	else
           if(get_type(idx) != get_type($3))
             err("incompatible types in assignment\n");
+ 
         gen_mov($3, idx);
+
+	// pitati asistentkinju da li se moze odraditi na ovaj nacin
+	if(number_of_increments != 0)
+	  code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number, number_of_increments, 4*ids_ordinal_number);
       }
   ;
 
@@ -424,8 +444,13 @@ exp
       }
   | _ID _INCREMENT
       {
+	$<i>$ = ++lab_num;
+	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR));
         if(($$ = lookup_symbol($1, (VAR|PAR|GVAR))) == -1)
           err("'%s' undeclared", $1);
+	number_of_increments++;
+	//code("\n@IncrInNumExp:");
+	//code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number, 1, 4*ids_ordinal_number);
       }
   | _ID _ASSIGN exp
       {
@@ -490,8 +515,8 @@ function_call
         if(get_atr1(fcall_idx) != $4)
           err("wrong number of arguments\n");
         code("\n\t\t\tCALL\t%s", get_name(fcall_idx));
-        //if($4 > 0)
-          //code("\n\t\t\tADDS\t%%15,$%d,%%15", $4 * 4);
+        if($4 > 0)
+          code("\n\t\t\tADDS\t%%15,$%d,%%15", $4 * 4);
         set_type(FUN_REG, get_type(fcall_idx));
         $$ = FUN_REG;
 
@@ -596,6 +621,8 @@ return_statement
 	else if(get_type(fun_idx) != get_type($2))
 	  err("incompatible types in return");
         return_count++; 
+	code("\n@Return:");
+	gen_mov($2, 13);
       }
   | _RETURN _SEMICOLON
       {
@@ -629,27 +656,27 @@ int main() {
   fclose(output);
   
   // stampa matricu u kojoj se nalaze tipovi fje sa vise prom
-  printf("\nMatrix\n");
-  for (int i=0; i<MAXROW; i++){
-      for(int j=0; j<MAXCOL; j++){
-      printf("%d\t", param_matrix[i][j]);		
-    }
-    printf("\n");
-  }
+  //printf("\nMatrix\n");
+  //for (int i=0; i<MAXROW; i++){
+      //for(int j=0; j<MAXCOL; j++){
+      //printf("%d\t", param_matrix[i][j]);		
+    //}
+    //printf("\n");
+  //}
   
   // stampa niz koji redom sadrzi tip za svaki parametar u funkciji
-  printf("\nParam array\n");
-  for (int i=0; i<MAXCOL; i++){
-    printf("%d\t", param_array[i]);		
-  }
-  printf("\n");
+  //printf("\nParam array\n");
+  //for (int i=0; i<MAXCOL; i++){
+    //printf("%d\t", param_array[i]);		
+  //}
+  //printf("\n");
 
   // stampa niz koji redom sadrzi tip za svaki argument u pozivu funkcije
-  printf("\nArg array\n");
-  for (int i=0; i<MAXCOL; i++){
-    printf("%d\t", arg_array[i]);		
-  }
-  printf("\n");
+  //printf("\nArg array\n");
+  //for (int i=0; i<MAXCOL; i++){
+    //printf("%d\t", arg_array[i]);		
+  //}
+  //printf("\n");
 
   if(warning_count)
     printf("\n%d warning(s).\n", warning_count);
