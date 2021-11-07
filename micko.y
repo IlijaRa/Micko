@@ -209,6 +209,8 @@ parameter
       {
 	if($3 == VOID)
 	  err("parameter cannot be of VOID type");
+	if(lookup_symbol($4, PAR) != NO_INDEX)
+	    err("redefinition of '%s'", $4);
 	else
 	{
 	  int par_idx = lookup_symbol($4, PAR);
@@ -312,28 +314,35 @@ statement
   ;
 
 for_statement
-  : _FOR _LPAREN _ID _ASSIGN literal _TO literal step_part _RPAREN statement
+  : _FOR _LPAREN 
     {
-        int id_idx=lookup_symbol($3, VAR);
+	$<i>$ = ++lab_num;
+	code("\n@For%d:", lab_num);
+    }
+    _ID _ASSIGN literal _TO literal step_part _RPAREN statement
+    {
+        int id_idx=lookup_symbol($4, VAR);
 	
 	if(id_idx == NO_INDEX)
-	  err("'%s' in for statement is undeclared", $3);
+	  err("'%s' in for statement is undeclared", $4);
 	
-	if($<i>8==1){
-	if(get_type($5) != get_type(id_idx) || 
-	   get_type($7) != get_type(id_idx) ||
+	if($<i>9==1){
+	if(get_type($6) != get_type(id_idx) || 
+	   get_type($8) != get_type(id_idx) ||
 	   get_type(step_part_literal_index) != get_type(id_idx))
 	     err("incompatible types in for statement");}
 	else{	
-	if(get_type($5) != get_type(id_idx) || 
-	   get_type($7) != get_type(id_idx))
+	if(get_type($6) != get_type(id_idx) || 
+	   get_type($8) != get_type(id_idx))
 	     err("incompatible types in for statement");}
 	
-	int lit1= atoi(get_name($5));
-	int lit2= atoi(get_name($7));
+	int lit1= atoi(get_name($6));
+	int lit2= atoi(get_name($8));
 	if(lit1>=lit2)
 	  err("Wrong boundary values in for statement");
-	
+
+	gen_mov($6, id_idx);
+
     }
   ;
 
@@ -586,8 +595,11 @@ if_part
       }
     log_exp 
       {
-        //code("\n\t\t%s\t@false%d", opp_jumps[$4], $<i>3); 
-        //code("\n@true%d:", $<i>3);
+	//if($<i>4 == 1){
+	  //code("\n\t\t%s\t@false%d", opp_jumps[$4], $<i>3); 
+          //code("\n@true%d:", $<i>3);
+        //}
+	
       }
     _RPAREN statement 
       {
@@ -598,8 +610,8 @@ if_part
   ;
 
 log_exp
-  : rel_exp //{ $<i>$ = jmp_catching; }
-  | log_exp _LOGOP rel_exp //{ $<i>$ = jmp_catching; } 
+  : rel_exp //{ $<i>$ = 1; }
+  | log_exp _LOGOP rel_exp //{ $<i>$ = 2; } 
   ;
 
 rel_exp
@@ -616,12 +628,13 @@ rel_exp
 return_statement
   : _RETURN num_exp _SEMICOLON
       {
+	$<i>$ = ++lab_num;
 	if(get_type(fun_idx) == VOID)
  	  err("Function cannot return value"); 
 	else if(get_type(fun_idx) != get_type($2))
 	  err("incompatible types in return");
         return_count++; 
-	code("\n@Return:");
+	code("\n@Return%d:", lab_num);
 	gen_mov($2, 13);
       }
   | _RETURN _SEMICOLON
