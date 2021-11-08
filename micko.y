@@ -9,6 +9,7 @@
   #define MAXVALUE 5
   #define MAXROW 20
   #define MAXCOL 6
+  #define MAX_INCL_ARRAY 10
 
   int yyparse(void);
   int yylex(void);
@@ -46,8 +47,13 @@
   int arr_counter = 0; // uz pomoc njega se smestaju ove vrednosti u nizove param_array i arg_array  
 
   int ids_ordinal_number = 0; // cuva redni broj promenljive
-
-  int number_of_increments = 0; // cuva broj incrementa koji se nalaze u assignment_statementu kako bi znao koliko posle treba da doda na rezultat, jer se prvo racuna numericki izraz pa onda increment
+ 
+  int ids_to_increment[] = {-1}; // u nizu se cuvaju redni brojevi promenljivih koje je potrebno inkrementovati
+  int inc_counter = 0; // counter za niz ids_to_increment
+  
+  int return_value_reg = 0; // index registra gde se smesta return vrednost fje
+  
+  //int return
 %}
 
 %union {
@@ -183,8 +189,9 @@ function
 
 parameter
   : /* empty */
-      { set_atr1(fun_idx, par_num); 
-	}
+      { 
+	set_atr1(fun_idx, par_num);
+      }
 
   | _TYPE _ID
       {
@@ -209,8 +216,10 @@ parameter
       {
 	if($3 == VOID)
 	  err("parameter cannot be of VOID type");
+
 	if(lookup_symbol($4, PAR) != NO_INDEX)
-	    err("redefinition of '%s'", $4);
+	  err("redefinition of '%s'", $4);
+	
 	else
 	{
 	  int par_idx = lookup_symbol($4, PAR);
@@ -239,6 +248,8 @@ body
       {
         if(var_num)
           code("\n\t\tSUBS\t%%15,$%d,%%15", 4*var_num);
+	//if(par_num)
+	  //code("\n\t\tSUBS\t%%15,$%d,%%15", 4*par_num);
         code("\n@%s_body:", get_name(fun_idx));
       }
     statement_list _RBRACKET
@@ -282,6 +293,7 @@ id // pitati da li moze ovako id da se odradi
               err("redefinition of '%s'", $1);
 	  }
         }
+	gen_mov($3, lookup_symbol($1, VAR));
       }
   | id _COMMA _ID
       {
@@ -380,7 +392,7 @@ increment_statement
   : _ID 
       {
 	$<i>$ = ++lab_num;
-	code("\n@Increment%d:", lab_num); 
+	//code("\n@Increment%d:", lab_num); 
 	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR));
       }
     _INCREMENT
@@ -413,11 +425,14 @@ assignment_statement
         if(get_type(idx) != get_type($3))
           err("incompatible types in assignment\n");
 	  
-        gen_mov($3, idx);
-
-	// pitati asistentkinju da li se moze odraditi na ovaj nacin
-	if(number_of_increments != 0)
-	  code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number, number_of_increments, 4*ids_ordinal_number);
+        gen_mov($3, idx); // ovde se treba podesiti da ako je parametar u num_exp onda pocinje od 8(%14), a ne od 4(%14).
+	
+	for(int i = 0; i < inc_counter; i++){
+	  code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_to_increment[i], 1, 4*ids_to_increment[i]);
+	  printf("\n");
+	}
+	inc_counter = 0;
+	
       }
   ;
 
@@ -457,9 +472,8 @@ exp
 	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR));
         if(($$ = lookup_symbol($1, (VAR|PAR|GVAR))) == -1)
           err("'%s' undeclared", $1);
-	number_of_increments++;
-	//code("\n@IncrInNumExp:");
-	//code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number, 1, 4*ids_ordinal_number);
+	ids_to_increment[inc_counter] = get_atr1(lookup_symbol($1, VAR));
+	inc_counter++;
       }
   | _ID _ASSIGN exp
       {
@@ -575,6 +589,11 @@ argument
       arg_array[arr_counter] = get_type($3);
 	  
       par_counter++;
+
+      free_if_reg($3);
+      code("\n\t\t\tPUSH\t");
+      gen_sym_name($3);
+	
       $$ = arg_num;
     }
   ;
@@ -628,20 +647,24 @@ rel_exp
 return_statement
   : _RETURN num_exp _SEMICOLON
       {
-	$<i>$ = ++lab_num;
+	//$<i>$ = ++lab_num;
 	if(get_type(fun_idx) == VOID)
  	  err("Function cannot return value"); 
 	else if(get_type(fun_idx) != get_type($2))
 	  err("incompatible types in return");
         return_count++; 
-	code("\n@Return%d:", lab_num);
-	gen_mov($2, 13);
+	//code("\n@%s_return:", get_name(fun_idx));
+	//return_value_reg = take_reg();
+	gen_mov($2, FUN_REG);
+        code("\n\t\tJMP \t@%s_exit", get_name(fun_idx));  
       }
   | _RETURN _SEMICOLON
       {
 	if(get_type(fun_idx) != VOID)
 	  warn("Function should return a value");
 	return_count++;
+
+        code("\n\t\tJMP \t@%s_exit", get_name(fun_idx));  
       }
   ;
 
