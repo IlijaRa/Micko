@@ -31,7 +31,7 @@
   int return_count = 0;
   int type = -1;// prvenstveno napravljena da sluzi kao flag za uzimanje vrednosti tipa varijable
   int step_part_literal_index = 0;
-  int jmp_catching = 0;
+  int log_part = 0;
   FILE *output;
   
   //matrica za fun sa vise parametara
@@ -52,8 +52,7 @@
   int inc_counter = 0; // counter za niz ids_to_increment
   
   int return_value_reg = 0; // index registra gde se smesta return vrednost fje
-  
-  //int return
+
 %}
 
 %union {
@@ -248,8 +247,7 @@ body
       {
         if(var_num)
           code("\n\t\tSUBS\t%%15,$%d,%%15", 4*var_num);
-	//if(par_num)
-	  //code("\n\t\tSUBS\t%%15,$%d,%%15", 4*par_num);
+
         code("\n@%s_body:", get_name(fun_idx));
       }
     statement_list _RBRACKET
@@ -328,64 +326,141 @@ statement
 for_statement
   : _FOR _LPAREN 
     {
-	$<i>$ = ++lab_num;
-	code("\n@For%d:", lab_num);
     }
-    _ID _ASSIGN literal _TO literal step_part _RPAREN statement
+    _ID _ASSIGN literal 
+    {
+	int id_idx=lookup_symbol($4, VAR);
+	gen_mov($6, id_idx);
+	$<i>$ = ++lab_num;
+	code("\n@for%d:", lab_num);
+    }
+    _TO literal step_part _RPAREN 
+    {
+	int id_idx=lookup_symbol($4, VAR);
+	gen_cmp(id_idx, $9);
+
+	if(get_type(id_idx) == INT)
+	  code("\n\t\tJGES\t@for_exit%d", $<i>7);
+ 
+	if(get_type(id_idx) == UINT)
+	  code("\n\t\tJGEU\t@for_exit%d", $<i>7);
+
+	code("\n@true%d:", $<i>7);
+    }
+    statement
     {
         int id_idx=lookup_symbol($4, VAR);
 	
 	if(id_idx == NO_INDEX)
 	  err("'%s' in for statement is undeclared", $4);
 	
-	if($<i>9==1){
+	if($<i>10!=0){	// ovo znaci da ima step_part
 	if(get_type($6) != get_type(id_idx) || 
-	   get_type($8) != get_type(id_idx) ||
+	   get_type($9) != get_type(id_idx) ||
 	   get_type(step_part_literal_index) != get_type(id_idx))
 	     err("incompatible types in for statement");}
 	else{	
 	if(get_type($6) != get_type(id_idx) || 
-	   get_type($8) != get_type(id_idx))
+	   get_type($9) != get_type(id_idx))
 	     err("incompatible types in for statement");}
 	
 	int lit1= atoi(get_name($6));
-	int lit2= atoi(get_name($8));
+	int lit2= atoi(get_name($9));
 	if(lit1>=lit2)
 	  err("Wrong boundary values in for statement");
+	
+	if(get_type(id_idx) == INT && $<i>10 == 0) {
+	  code("\n\t\tADDS\t");
+	  gen_sym_name(id_idx);
+	  code(",");
+	  code("$1,");
+	  gen_sym_name(id_idx);
+	}
+	
+	else if(get_type(id_idx) == UINT && $<i>10 == 0) {
+	  code("\n\t\tADDU\t");
+	  gen_sym_name(id_idx);
+	  code(",");
+	  code("$1,");
+	  gen_sym_name(id_idx);
+	}
 
+	else if(get_type(id_idx) == INT && $<i>10 != 0) {
+	  code("\n\t\tADDS\t");
+	  gen_sym_name(id_idx);
+	  code(",");
+	  code("$%d,", $<i>10);
+	  gen_sym_name(id_idx);
+	}
+	
+	else if(get_type(id_idx) == UINT && $<i>10 != 0) {
+	  code("\n\t\tADDU\t");
+	  gen_sym_name(id_idx);
+	  code(",");
+	  code("$%d,", $<i>10);
+	  gen_sym_name(id_idx);
+	}
+
+	code("\n\t\tJMP\t@for%d", $<i>7);
+	code("\n@for_exit%d:", $<i>7);
 	gen_mov($6, id_idx);
-
     }
   ;
 
 step_part
-  : /* empty */ {$<i>$=-1;}
+  : /* empty */ {$<i>$=0;} // vraca 0
   | _STEP literal
     {
 	step_part_literal_index = lookup_symbol(get_name($2), LIT);
-	$<i>$ = 1;
+	$<i>$ = atoi(get_name($2)); // vraca vrednost literala za koji se povecava brojac u foru
     }
   ;
 
 branch_statement
-  : _BRANCH _LPAREN _ID _SEMICOLON literal _COMMA literal _COMMA literal _RPAREN branches _END_BRANCH
+  : _BRANCH _LPAREN 
     {
-	int idx= lookup_symbol($3, VAR);
+	$<i>$ = ++lab_num;	
+	code("\nbranch%d:", lab_num);
+    }
+    _ID _SEMICOLON literal _COMMA literal _COMMA literal _RPAREN 
+    {
+	int idx= lookup_symbol($4, VAR);
+	
+	gen_cmp(idx, $6);
+	code("\n\t\tJEQ\t@one%d", $<i>3);
+
+	gen_cmp(idx, $8);
+	code("\n\t\tJEQ\t@two%d", $<i>3);
+
+	gen_cmp(idx, $10);
+	code("\n\t\tJEQ\t@three%d", $<i>3);
+
+	code("\n\t\tJMP\t@other%d", $<i>3);
+    }
+    branches _END_BRANCH
+    {
+	int idx= lookup_symbol($4, VAR);
 	if(idx==NO_INDEX)
-	  err("'%s' undeclared", $3);
+	  err("'%s' undeclared", $4);
 	else
-	  if(get_type($5) != get_type(idx) ||
-	     get_type($7) != get_type(idx) ||
-	     get_type($9) != get_type(idx))
+	  if(get_type($6) != get_type(idx) ||
+	     get_type($8) != get_type(idx) ||
+	     get_type($10) != get_type(idx))
 	       err("incompatible type in branch statement");
+	
+	code("\n@end_branch%d:", $<i>3);
     }
   ;
 
 branches
-  : _ONE statement
-    _TWO statement
-    _THREE statement
-    _OTHER statement
+  : _ONE { code("\n@one%d:", lab_num); }
+     statement { code("\n\t\tJMP\t@end_branch%d", lab_num); }
+    _TWO { code("\n@two%d:", lab_num); }
+     statement { code("\n\t\tJMP\t@end_branch%d", lab_num); }
+    _THREE { code("\n@three%d:", lab_num); }
+     statement { code("\n\t\tJMP\t@end_branch%d", lab_num); }
+    _OTHER { code("\n@other%d:", lab_num); }
+     statement { code("\n\t\tJMP\t@end_branch%d", lab_num); }
   ;
 
 increment_statement
@@ -424,15 +499,20 @@ assignment_statement
 	//else
         if(get_type(idx) != get_type($3))
           err("incompatible types in assignment\n");
-	  
+
         gen_mov($3, idx); // ovde se treba podesiti da ako je parametar u num_exp onda pocinje od 8(%14), a ne od 4(%14).
 	
 	for(int i = 0; i < inc_counter; i++){
 	  code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_to_increment[i], 1, 4*ids_to_increment[i]);
 	  printf("\n");
 	}
+
+	for(int i = 0; i < inc_counter; i++){
+	  ids_to_increment[i]= 0;
+	  printf("\n");
+	}
 	inc_counter = 0;
-	
+
       }
   ;
 
@@ -472,7 +552,7 @@ exp
 	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR));
         if(($$ = lookup_symbol($1, (VAR|PAR|GVAR))) == -1)
           err("'%s' undeclared", $1);
-	ids_to_increment[inc_counter] = get_atr1(lookup_symbol($1, VAR));
+	ids_to_increment[inc_counter] = get_atr1(lookup_symbol($1, VAR|GVAR));
 	inc_counter++;
       }
   | _ID _ASSIGN exp
@@ -614,11 +694,15 @@ if_part
       }
     log_exp 
       {
-	//if($<i>4 == 1){
-	  //code("\n\t\t%s\t@false%d", opp_jumps[$4], $<i>3); 
-          //code("\n@true%d:", $<i>3);
-        //}
-	
+	//if(log_part == 0){
+	  code("\n\t\t%s\t@false%d", opp_jumps[$<i>4], $<i>3); 
+          code("\n@true%d:", $<i>3);
+	/*}
+	else{
+	  code("\n\t\t%s\t@false%d", opp_jumps[$<i>4], $<i>3);  
+          code("\n@true%d:", $<i>3);
+	}
+	*/
       }
     _RPAREN statement 
       {
@@ -629,8 +713,12 @@ if_part
   ;
 
 log_exp
-  : rel_exp //{ $<i>$ = 1; }
-  | log_exp _LOGOP rel_exp //{ $<i>$ = 2; } 
+  : rel_exp { $<i>$ = $1; log_part = 0;}
+  | log_exp _LOGOP rel_exp 
+      { 
+	log_part = 1; 
+	$<i>$ = $3;
+      }
   ;
 
 rel_exp
@@ -639,7 +727,6 @@ rel_exp
         if(get_type($1) != get_type($3))
           err("invalid operands: relational operator");
         $$ = $2 + ((get_type($1) - 1) * RELOP_NUMBER);
-	//jmp_catching= $2 + ((get_type($1) - 1) * RELOP_NUMBER);
         gen_cmp($1, $3);
       }
   ;
