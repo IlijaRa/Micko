@@ -52,7 +52,17 @@
   int inc_counter = 0; // counter za niz ids_to_increment
   
   int return_value_reg = 0; // index registra gde se smesta return vrednost fje
+  
+  int jumps_array[MAX_INCL_ARRAY] = {-1}; // kupi vrednosti iz jednacine koja racuna koji je jump
+  int jumps_counter = 0;
 
+  int logops_array[MAX_INCL_ARRAY] = {-1}; // kupi vrednosti log operatora
+  int logops_counter = 0;
+
+  int or_used = 0;
+  int and_used = 0;
+
+  int multiple_numexps = 0; //flag da li je u num_expu jedna prom ili vise
 %}
 
 %union {
@@ -247,7 +257,7 @@ body
       {
         if(var_num)
           code("\n\t\tSUBS\t%%15,$%d,%%15", 4*var_num);
-
+	
         code("\n@%s_body:", get_name(fun_idx));
       }
     statement_list _RBRACKET
@@ -499,8 +509,15 @@ assignment_statement
 	//else
         if(get_type(idx) != get_type($3))
           err("incompatible types in assignment\n");
-
-        gen_mov($3, idx); // ovde se treba podesiti da ako je parametar u num_exp onda pocinje od 8(%14), a ne od 4(%14).
+	
+	  if(get_kind($3) == PAR){
+	    int place1 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
+	    code("\n\t\tMOV\t%d(%%14)", place1);
+	    code(",");
+	    gen_sym_name(idx);
+	  }
+	  else   
+            gen_mov($3, idx);
 	
 	for(int i = 0; i < inc_counter; i++){
 	  code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_to_increment[i], 1, 4*ids_to_increment[i]);
@@ -518,22 +535,71 @@ assignment_statement
 
 num_exp
   : exp
+      {
+	multiple_numexps = 0;
+      }
 
   | num_exp _AROP exp
       {
         if(get_type($1) != get_type($3))
           err("invalid operands: arithmetic operation");
         int t1 = get_type($1);    
-        code("\n\t\t%s\t", ar_instructions[$2 + (t1 - 1) * AROP_NUMBER]);
-        gen_sym_name($1);
-        code(",");
-        gen_sym_name($3);
-        code(",");
-        free_if_reg($3);
-        free_if_reg($1);
-        $$ = take_reg();
-        gen_sym_name($$);
-        set_type($$, t1);
+          
+	  if(get_kind($1) == PAR && get_kind($3) == PAR){
+	//place1,2 su formule koje izracunavaju poziciju parametra od registra %14, jer je prvi par najvise udaljen od %14 reg, a poslednji par najmanje...
+	    int place1 = (get_atr1(fun_idx)-get_atr1($1))*4 + 4;
+	    int place2 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
+	    code("\n\t\t%s\t", ar_instructions[$2 + (t1 - 1) * AROP_NUMBER]);
+	    code("%d(%%14)", place1);
+	    code(",");
+	    code("%d(%%14)", place2);
+	    code(",");
+            free_if_reg($3);
+            free_if_reg($1);
+            $$ = take_reg();
+            gen_sym_name($$);
+            set_type($$, t1);
+	  }
+	  else if(get_kind($1) != PAR && get_kind($3) != PAR){
+	    code("\n\t\t%s\t", ar_instructions[$2 + (t1 - 1) * AROP_NUMBER]);
+	    gen_sym_name($1);
+	    code(",");
+	    gen_sym_name($3);
+	    code(",");
+            free_if_reg($3);
+            free_if_reg($1);
+            $$ = take_reg();
+            gen_sym_name($$);
+            set_type($$, t1);
+	  }
+	  else if(get_kind($1) == PAR && get_kind($3) != PAR){
+	    int place1 = (get_atr1(fun_idx)-get_atr1($1))*4 + 4;
+	    code("\n\t\t%s\t", ar_instructions[$2 + (t1 - 1) * AROP_NUMBER]);
+	    code("%d(%%14)", place1);
+	    code(",");
+	    gen_sym_name($3);
+	    code(",");
+            free_if_reg($3);
+            free_if_reg($1);
+            $$ = take_reg();
+            gen_sym_name($$);
+            set_type($$, t1);
+	  }
+	  else if(get_kind($1) != PAR && get_kind($3) == PAR){
+	    int place2 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
+	    code("\n\t\t%s\t", ar_instructions[$2 + (t1 - 1) * AROP_NUMBER]);
+	    gen_sym_name($1);
+	    code(",");
+	    code("%d(%%14)", place2);
+	    code(",");
+            free_if_reg($3);
+            free_if_reg($1);
+            $$ = take_reg();
+            gen_sym_name($$);
+            set_type($$, t1);
+	  }
+
+	multiple_numexps = 1;
       }
   ;
 
@@ -549,7 +615,7 @@ exp
   | _ID _INCREMENT
       {
 	$<i>$ = ++lab_num;
-	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR));
+	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR|GVAR));
         if(($$ = lookup_symbol($1, (VAR|PAR|GVAR))) == -1)
           err("'%s' undeclared", $1);
 	ids_to_increment[inc_counter] = get_atr1(lookup_symbol($1, VAR|GVAR));
@@ -694,15 +760,34 @@ if_part
       }
     log_exp 
       {
-	//if(log_part == 0){
-	  code("\n\t\t%s\t@false%d", opp_jumps[$<i>4], $<i>3); 
-          code("\n@true%d:", $<i>3);
-	/*}
-	else{
-	  code("\n\t\t%s\t@false%d", opp_jumps[$<i>4], $<i>3);  
-          code("\n@true%d:", $<i>3);
+	if(log_part == 0){
+	  code("\n\t\t%s\t@false%d", opp_jumps[jumps_array[0]], $<i>3);
 	}
-	*/
+	else if(log_part == 1){
+	  for(int i=0; i < jumps_counter-1; i++){
+	    if(logops_array[i] == AND){
+	      code("\n\t\t%s\t@false%d", opp_jumps[jumps_array[i]], $<i>3); 
+	      code("\n\t\t%s\t@false%d", opp_jumps[jumps_array[i+1]], $<i>3); 
+	    }	
+	    else{
+	      code("\n\t\t%s\t@true%d", jumps[jumps_array[i]], $<i>3); 
+	      code("\n\t\t%s\t@true%d", jumps[jumps_array[i+1]], $<i>3);
+	      or_used = 1;
+	    }
+	
+	  }
+	}
+	//vracanje nizova i countera na pocetne vrednosti
+	for(int i = 0; i < jumps_counter; i++){
+	  jumps_array[i] = -1;
+	  logops_array[i] = -1;
+	}
+	jumps_counter = 0;
+	logops_counter = 0;
+
+	if(or_used == 1)	
+	  code("\n\t\tJMP\t@false%d", $<i>3);
+	code("\n@true%d:", $<i>3);
       }
     _RPAREN statement 
       {
@@ -713,11 +798,23 @@ if_part
   ;
 
 log_exp
-  : rel_exp { $<i>$ = $1; log_part = 0;}
+  : rel_exp 
+      { 
+	log_part = 0;
+	$<i>$ = $1; 
+	jumps_array[jumps_counter] = $1;
+	jumps_counter++;
+      }
   | log_exp _LOGOP rel_exp 
       { 
-	log_part = 1; 
+	log_part = 1;
 	$<i>$ = $3;
+	
+	jumps_array[jumps_counter] = $3;
+	jumps_counter++;
+
+	logops_array[logops_counter] = $2;
+	logops_counter++;
       }
   ;
 
