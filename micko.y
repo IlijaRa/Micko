@@ -197,12 +197,16 @@ function
   ;
 
 parameter
-  : /* empty */
+  :/* empty */
       { 
 	set_atr1(fun_idx, par_num);
       }
+  | multiple_param
+  ;
 
-  | _TYPE _ID
+
+multiple_param
+  : _TYPE _ID
       {
 	if($1 == VOID)
 	  err("parameter cannot be of VOID type");
@@ -221,7 +225,7 @@ parameter
           set_atr2(fun_idx, $1);
       }
 
-  | parameter _COMMA _TYPE _ID
+  | multiple_param _COMMA _TYPE _ID
       {
 	if($3 == VOID)
 	  err("parameter cannot be of VOID type");
@@ -252,6 +256,7 @@ parameter
 	}
       }
   ;
+
 body
   : _LBRACKET variable_list
       {
@@ -874,30 +879,30 @@ int main() {
 
   clear_symtab();
   fclose(output);
-  
+  /*
   // stampa matricu u kojoj se nalaze tipovi fje sa vise prom
-  //printf("\nMatrix\n");
-  //for (int i=0; i<MAXROW; i++){
-      //for(int j=0; j<MAXCOL; j++){
-      //printf("%d\t", param_matrix[i][j]);		
-    //}
-    //printf("\n");
-  //}
+  printf("\nMatrix\n");
+  for (int i=0; i<MAXROW; i++){
+      for(int j=0; j<MAXCOL; j++){
+      printf("%d\t", param_matrix[i][j]);		
+    }
+    printf("\n");
+  }
   
   // stampa niz koji redom sadrzi tip za svaki parametar u funkciji
-  //printf("\nParam array\n");
-  //for (int i=0; i<MAXCOL; i++){
-    //printf("%d\t", param_array[i]);		
-  //}
-  //printf("\n");
+  printf("\nParam array\n");
+  for (int i=0; i<MAXCOL; i++){
+    printf("%d\t", param_array[i]);		
+  }
+  printf("\n");
 
   // stampa niz koji redom sadrzi tip za svaki argument u pozivu funkcije
-  //printf("\nArg array\n");
-  //for (int i=0; i<MAXCOL; i++){
-    //printf("%d\t", arg_array[i]);		
-  //}
-  //printf("\n");
-
+  printf("\nArg array\n");
+  for (int i=0; i<MAXCOL; i++){
+    printf("%d\t", arg_array[i]);		
+  }
+  printf("\n");
+  */
   if(warning_count)
     printf("\n%d warning(s).\n", warning_count);
 
