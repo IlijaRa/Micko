@@ -48,9 +48,15 @@
 
   int ids_ordinal_number = 0; // cuva redni broj promenljive
  
-  int ids_to_increment[] = {-1}; // u nizu se cuvaju redni brojevi promenljivih koje je potrebno inkrementovati
+  int ids_to_increment[] = {-1}; // cuva redne brojeve promenljivih koje je potrebno inkrementovati
   int inc_counter = 0; // counter za niz ids_to_increment
+
+  int params_to_increment[] = {-1}; // cuva redne brojeve parametara koje je potrebno inkrementovati
+  int params_counter = 0; // counter za niz params_to_increment
   
+  int gvars_to_increment[] = {-1}; // cuva redne brojeve globalnih prom koje je potrebno inkrementovati
+  int gvars_counter = 0; // counter za niz gvars_to_increment
+
   int return_value_reg = 0; // index registra gde se smesta return vrednost fje
 
   int single_relexp = 0; // sluzi da preuzme vrednost ukoliko je u log_exp samo jedan rel_exp
@@ -480,12 +486,54 @@ increment_statement
   : _ID 
       {
 	$<i>$ = ++lab_num;
-	//code("\n@Increment%d:", lab_num); 
 	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR));
       }
     _INCREMENT
-      {
-	code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number, 1, 4*ids_ordinal_number);
+      { 
+	int id_idx = lookup_symbol($1, VAR|GVAR|PAR);
+	if(get_kind(id_idx) == PAR){ 
+	    int place = (get_atr1(fun_idx)-get_atr1(id_idx))*4 + 4;
+	    if(get_type(id_idx) == INT){
+	      code("\n\t\tADDS\t%d(%%14),$%d,%d(%%14)", place,
+						        1, 
+						        place);
+	    }
+	    if(get_type(id_idx) == UINT){
+	      code("\n\t\tADDU\t%d(%%14),$%d,%d(%%14)", place,
+						        1u,
+						        place);
+	    }
+	}
+	if(get_kind(id_idx) == VAR){
+	    if(get_type(id_idx) == INT){
+	      code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number,
+						          1, 
+						          4*ids_ordinal_number);
+	    }
+	    if(get_type(id_idx) == UINT){
+	      code("\n\t\tADDU\t-%d(%%14),$%d,-%d(%%14)", 4*ids_ordinal_number,
+						          1u,
+						          4*ids_ordinal_number);
+	    }
+	}
+	if(get_kind(id_idx) == GVAR){
+	    if(get_type(id_idx) == INT){
+	      code("\n\t\tADDS\t");
+	      gen_sym_name(id_idx);
+	      code(",");
+	      code("$%d", 1);
+	      code(",");
+	      gen_sym_name(id_idx);
+	    }
+	    if(get_type(id_idx) == UINT){
+	      code("\n\t\tADDU\t");
+	      gen_sym_name(id_idx);
+	      code(",");
+	      code("$%d", 1u);
+	      code(",");
+	      gen_sym_name(id_idx);
+	    }
+	}
       }
     _SEMICOLON
       {
@@ -535,15 +583,54 @@ assignment_statement
             gen_mov($3, idx);
 	
 	for(int i = 0; i < inc_counter; i++){
-	  code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*ids_to_increment[i], 1, 4*ids_to_increment[i]);
-	  printf("\n");
+	  if(get_type(ids_to_increment[i]) == INT){
+            code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*get_atr1(ids_to_increment[i]), 
+							1, 
+							4*get_atr1(ids_to_increment[i]));
+	  }
+	  if(get_type(ids_to_increment[i]) == UINT){
+          code("\n\t\tADDU\t-%d(%%14),$%d,-%d(%%14)", 4*get_atr1(ids_to_increment[i]), 
+						      1u, 
+						      4*get_atr1(ids_to_increment[i]));
+	  }
 	}
 
+	for(int i = 0; i < params_counter; i++){
+	  int place = (get_atr1(fun_idx)-get_atr1(params_to_increment[i]))*4 + 4;
+	  
+	  if(get_type(params_to_increment[i]) == INT){
+            code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", place, 
+							1, 
+							place);
+	  }
+	  if(get_type(params_to_increment[i]) == UINT){
+          code("\n\t\tADDU\t-%d(%%14),$%d,-%d(%%14)", place, 
+						      1u, 
+						      place);
+	  }
+	}
+
+	for(int i = 0; i < gvars_counter; i++){
+	  if(get_type(gvars_to_increment[i]) == INT){
+            code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*get_atr1(gvars_to_increment[i]), 
+							1, 
+							4*get_atr1(gvars_to_increment[i]));
+	  }
+	  if(get_type(gvars_to_increment[i]) == UINT){
+          code("\n\t\tADDU\t-%d(%%14),$%d,-%d(%%14)", 4*get_atr1(gvars_to_increment[i]), 
+					 	      1u, 
+						      4*get_atr1(gvars_to_increment[i]));
+	  }
+	}
+	
 	for(int i = 0; i < inc_counter; i++){
 	  ids_to_increment[i]= 0;
-	  printf("\n");
+	  params_to_increment[i]= 0;
+	  gvars_to_increment[i]= 0;
 	}
 	inc_counter = 0;
+	params_counter = 0;
+	gvars_counter = 0;
 
       }
   ;
@@ -633,8 +720,16 @@ exp
 	ids_ordinal_number = get_atr1(lookup_symbol($1, VAR|GVAR));
         if(($$ = lookup_symbol($1, (VAR|PAR|GVAR))) == -1)
           err("'%s' undeclared", $1);
-	ids_to_increment[inc_counter] = get_atr1(lookup_symbol($1, VAR|GVAR));
+	
+	ids_to_increment[inc_counter] = lookup_symbol($1, VAR);
 	inc_counter++;
+	
+	params_to_increment[params_counter] = lookup_symbol($1, PAR);
+	params_counter++;
+
+	gvars_to_increment[gvars_counter] = lookup_symbol($1, GVAR);
+	gvars_counter++;
+	
       }
   | _ID _ASSIGN exp
       {
