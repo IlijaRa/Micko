@@ -52,17 +52,11 @@
   int inc_counter = 0; // counter za niz ids_to_increment
   
   int return_value_reg = 0; // index registra gde se smesta return vrednost fje
+
+  int single_relexp = 0; // sluzi da preuzme vrednost ukoliko je u log_exp samo jedan rel_exp
   
-  int jumps_array[MAX_INCL_ARRAY] = {-1}; // kupi vrednosti iz jednacine koja racuna koji je jump
-  int jumps_counter = 0;
-
-  int logops_array[MAX_INCL_ARRAY] = {-1}; // kupi vrednosti log operatora
-  int logops_counter = 0;
-
-  int or_used = 0;
-  int and_used = 0;
-
-  int multiple_numexps = 0; //flag da li je u num_expu jedna prom ili vise
+  int void_functions[MAXVALUE*2] = {-1};
+  int void_fun_counter = 0;
 %}
 
 %union {
@@ -173,7 +167,11 @@ function
 	}
         else 
           err("redefinition of function '%s'", $2);
-
+	
+	if($1 == VOID){
+	  void_functions[void_fun_counter] = fun_idx;
+  	  void_fun_counter++;
+	}
         code("\n%s:", $2);
         code("\n\t\tPUSH\t%%14");
         code("\n\t\tMOV \t%%15,%%14");
@@ -506,6 +504,18 @@ compound_statement
   ;
 
 assignment_statement
+  /*: _VOID num_exp _SEMICOLON
+      {
+	int funExists = 0;
+	int num_idx = lookup_symbol(get_name($<i>2), FUN);
+	for(int i = 0; i < void_fun_counter; i++){
+	  if(num_idx == void_functions[i])
+	    funExists = 1;
+	}
+	if(funExists == 0)
+	  err("syntax error!bre");
+	  
+      }*/
   : _ID _ASSIGN num_exp _SEMICOLON
       {
         int idx = lookup_symbol($1, VAR|PAR|GVAR);
@@ -541,7 +551,7 @@ assignment_statement
 num_exp
   : exp
       {
-	multiple_numexps = 0;
+	//multiple_numexps = 0;
       }
 
   | num_exp _AROP exp
@@ -604,7 +614,7 @@ num_exp
             set_type($$, t1);
 	  }
 
-	multiple_numexps = 1;
+	//multiple_numexps = 1;
       }
   ;
 
@@ -766,38 +776,14 @@ if_part
     log_exp 
       {
 	if(log_part == 0){
-	  code("\n\t\t%s\t@false%d", opp_jumps[jumps_array[0]], $<i>3);
+	  code("\n\t\t%s\t@false%d", opp_jumps[single_relexp], $<i>3);
 	}
-	else if(log_part == 1){
-	  for(int i=0; i < jumps_counter-1; i++){
-	    if(logops_array[i] == AND){
-	      code("\n\t\t%s\t@false%d", opp_jumps[jumps_array[i]], $<i>3); 
-	      code("\n\t\t%s\t@false%d", opp_jumps[jumps_array[i+1]], $<i>3); 
-	    }	
-	    else{
-	      code("\n\t\t%s\t@true%d", jumps[jumps_array[i]], $<i>3); 
-	      code("\n\t\t%s\t@true%d", jumps[jumps_array[i+1]], $<i>3);
-	      or_used = 1;
-	    }
-	
-	  }
-	}
-	//vracanje nizova i countera na pocetne vrednosti
-	for(int i = 0; i < jumps_counter; i++){
-	  jumps_array[i] = -1;
-	  logops_array[i] = -1;
-	}
-	jumps_counter = 0;
-	logops_counter = 0;
-
-	if(or_used == 1)	
-	  code("\n\t\tJMP\t@false%d", $<i>3);
 	code("\n@true%d:", $<i>3);
       }
     _RPAREN statement 
       {
         code("\n\t\tJMP \t@exit%d", $<i>3);
-        code("\n@false%d:", $<i>3);
+	code("\n@false%d:", $<i>3);
         $$ = $<i>3;
       } 
   ;
@@ -806,20 +792,30 @@ log_exp
   : rel_exp 
       { 
 	log_part = 0;
-	$<i>$ = $1; 
-	jumps_array[jumps_counter] = $1;
-	jumps_counter++;
+	single_relexp = $1;
+	//$<i>$ = 1; 
       }
-  | log_exp _LOGOP rel_exp 
+  | log_exp _LOGOP 
+      //{
+	//if($<i>1 == 1)
+	  //code("\n\t\t%s\t@false%d", opp_jumps[single_relexp], lab_num);
+	//if($<i>1 == 1 && $2 == AND)
+	  //code("\n\t\t%s\t@false%d", opp_jumps[single_relexp], lab_num);
+	//if($<i>1 == 1 && $2 == OR)
+	  //code("\n\t\t%s\t@true%d", jumps[single_relexp], lab_num);
+      //}
+    rel_exp 
       { 
+	/*if($<i>1 == 1 && $2 == AND)
+	  code("\n\t\t%s\t@false%d", opp_jumps[$<i>4], lab_num);
+	if($<i>1 == 1 && $2 == OR)
+	  code("\n\t\t%s\t@false%d", opp_jumps[$<i>4], lab_num);
+	if($<i>1 != 1 && $2 == AND)	
+	  code("\n\t\t%s\t@false%d", opp_jumps[$<i>4], lab_num);
+	if($<i>1 != 1 && $2 == OR)
+	  code("\n@false%d",lab_num);*/
 	log_part = 1;
-	$<i>$ = $3;
-	
-	jumps_array[jumps_counter] = $3;
-	jumps_counter++;
-
-	logops_array[logops_counter] = $2;
-	logops_counter++;
+	//$<i>$ = $3; 
       }
   ;
 
@@ -829,7 +825,54 @@ rel_exp
         if(get_type($1) != get_type($3))
           err("invalid operands: relational operator");
         $$ = $2 + ((get_type($1) - 1) * RELOP_NUMBER);
-        gen_cmp($1, $3);
+	
+	if(get_kind($1) == PAR && get_kind($3) == PAR){
+	//place1,2 su formule koje izracunavaju poziciju parametra od registra %14, jer je prvi par najvise udaljen od %14 reg, a poslednji par najmanje...
+	    int place1 = (get_atr1(fun_idx)-get_atr1($1))*4 + 4;
+	    int place2 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
+	    
+	    if(get_type($1) == INT && get_type($3) == INT)
+	      code("\n\t\tCMPS\t");
+	    else
+  	      code("\n\t\tCMPU\t");
+	    code("%d(%%14)", place1);
+	    code(",");
+	    code("%d(%%14)", place2);
+	  }
+	  else if(get_kind($1) != PAR && get_kind($3) != PAR){
+	    /*if(get_type($1) == INT && get_type($3) == INT)
+	      code("\n\t\tCMPS\t");
+	    else
+  	      code("\n\t\tCMPU\t");
+	    gen_sym_name($1);
+	    code(",");
+	    gen_sym_name($3);*/
+	    gen_cmp($1, $3);
+	  }
+	  else if(get_kind($1) == PAR && get_kind($3) != PAR){
+	    int place1 = (get_atr1(fun_idx)-get_atr1($1))*4 + 4;
+	    
+	    if(get_type($1) == INT && get_type($3) == INT)
+	      code("\n\t\tCMPS\t");
+	    else
+  	      code("\n\t\tCMPU\t");
+	    code("%d(%%14)", place1);
+	    code(",");
+	    gen_sym_name($3);
+	  }
+	  else if(get_kind($1) != PAR && get_kind($3) == PAR){
+	    int place2 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
+	    
+	    if(get_type($1) == INT && get_type($3) == INT)
+	      code("\n\t\tCMPS\t");
+	    else
+  	      code("\n\t\tCMPU\t");
+	    gen_sym_name($1);
+	    code(",");
+	    code("%d(%%14)", place2);
+	  }	
+	
+        //gen_cmp($1, $3);
       }
   ;
 
@@ -844,7 +887,17 @@ return_statement
         return_count++; 
 	//code("\n@%s_return:", get_name(fun_idx));
 	//return_value_reg = take_reg();
-	gen_mov($2, FUN_REG);
+	if(get_kind($2) == PAR){
+	  int place = (get_atr1(fun_idx)-get_atr1($2))*4 + 4;
+	    
+	  code("\n\t\tMOV\t");
+	  code("%d(%%14)", place);
+	  code(",");
+	  //code("%");
+	  gen_sym_name(FUN_REG);
+	}
+	else
+	  gen_mov($2, FUN_REG);
         code("\n\t\tJMP \t@%s_exit", get_name(fun_idx));  
       }
   | _RETURN _SEMICOLON
