@@ -552,18 +552,6 @@ compound_statement
   ;
 
 assignment_statement
-  /*: _VOID num_exp _SEMICOLON
-      {
-	int funExists = 0;
-	int num_idx = lookup_symbol(get_name($<i>2), FUN);
-	for(int i = 0; i < void_fun_counter; i++){
-	  if(num_idx == void_functions[i])
-	    funExists = 1;
-	}
-	if(funExists == 0)
-	  err("syntax error!bre");
-	  
-      }*/
   : _ID _ASSIGN num_exp _SEMICOLON
       {
         int idx = lookup_symbol($1, VAR|PAR|GVAR);
@@ -573,14 +561,30 @@ assignment_statement
         if(get_type(idx) != get_type($3))
           err("incompatible types in assignment\n");
 	
-	  if(get_kind($3) == PAR){
+	  if(get_kind($3) == PAR && get_kind(idx) == PAR){
+	    int place1 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
+	    int place2 = (get_atr1(fun_idx)-get_atr1(idx))*4 + 4;
+	    code("\n\t\tMOV\t%d(%%14)", place1);
+	    code(",");
+	    code("%d(%%14)", place2);
+	    //gen_sym_name(idx);
+	  }
+	  else if(get_kind($3) != PAR && get_kind(idx) != PAR){
+	    gen_mov($3, idx);
+	  }
+	  else if(get_kind($3) == PAR && get_kind(idx) != PAR) {
 	    int place1 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
 	    code("\n\t\tMOV\t%d(%%14)", place1);
 	    code(",");
 	    gen_sym_name(idx);
-	  }
-	  else   
-            gen_mov($3, idx);
+	  } 
+          else if(get_kind($3) != PAR && get_kind(idx) == PAR) {
+	    int place2 = (get_atr1(fun_idx)-get_atr1(idx))*4 + 4;
+	    code("\n\t\tMOV\t");
+	    gen_sym_name($3);
+	    code(",");
+	    code("%d(%%14)", place2);
+	  } 
 	
 	for(int i = 0; i < inc_counter; i++){
 	  if(get_type(ids_to_increment[i]) == INT){
@@ -599,27 +603,37 @@ assignment_statement
 	  int place = (get_atr1(fun_idx)-get_atr1(params_to_increment[i]))*4 + 4;
 	  
 	  if(get_type(params_to_increment[i]) == INT){
-            code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", place, 
-							1, 
-							place);
+            code("\n\t\tADDS\t%d(%%14),$%d,%d(%%14)", place, 
+						      1, 
+						      place);
 	  }
 	  if(get_type(params_to_increment[i]) == UINT){
-          code("\n\t\tADDU\t-%d(%%14),$%d,-%d(%%14)", place, 
-						      1u, 
-						      place);
+          code("\n\t\tADDU\t%d(%%14),$%d,%d(%%14)", place, 
+						    1u, 
+						    place);
 	  }
 	}
 
 	for(int i = 0; i < gvars_counter; i++){
 	  if(get_type(gvars_to_increment[i]) == INT){
-            code("\n\t\tADDS\t-%d(%%14),$%d,-%d(%%14)", 4*get_atr1(gvars_to_increment[i]), 
-							1, 
-							4*get_atr1(gvars_to_increment[i]));
+
+	    code("\n\t\tADDS\t");
+	    gen_sym_name(gvars_to_increment[i]);
+	    code(",");
+	    code("$%d", 1);
+	    code(",");
+	    gen_sym_name(gvars_to_increment[i]);
+
 	  }
 	  if(get_type(gvars_to_increment[i]) == UINT){
-          code("\n\t\tADDU\t-%d(%%14),$%d,-%d(%%14)", 4*get_atr1(gvars_to_increment[i]), 
-					 	      1u, 
-						      4*get_atr1(gvars_to_increment[i]));
+
+	    code("\n\t\tADDU\t");
+	    gen_sym_name(gvars_to_increment[i]);
+	    code(",");
+	    code("$%d", 1u);
+	    code(",");
+	    gen_sym_name(gvars_to_increment[i]);
+
 	  }
 	}
 	
@@ -769,7 +783,7 @@ exp
 cond_exp
   : _ID
       {
-	if( ($$ = lookup_symbol($1, (VAR|PAR))) == NO_INDEX )
+	if( ($$ = lookup_symbol($1, (GVAR|VAR|PAR))) == NO_INDEX )
 	  err("'%s' undeclared", $1);
       }
   | literal
