@@ -47,4 +47,5 @@ static char* jumps[]={"JLTS", "JGTS", "JLES", "JGES", "JEQ ", "JNE ",
 
 static char* opp_jumps[]={"JGES", "JLES", "JGTS", "JLTS", "JNE ", "JEQ ",
                           "JGEU", "JLEU", "JGTU", "JLTU", "JNE ", "JEQ "};
+
 #endif

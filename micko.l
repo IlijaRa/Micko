@@ -49,8 +49,8 @@
 "=="                 { yylval.i = EQ; return _RELOP; }
 "!="                 { yylval.i = NE; return _RELOP; }
 
-"and"		     { yylval.i = AND; return _LOGOP; }
-"or"		     { yylval.i = OR; return _LOGOP; }
+"and"                { return _AND; }
+"or"                 { return _OR;  }
 
 [a-zA-Z][a-zA-Z0-9]* { yylval.s = strdup(yytext); 
                        return _ID; }

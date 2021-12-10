@@ -1048,12 +1048,12 @@ YY_RULE_SETUP
 case 35:
 YY_RULE_SETUP
 #line 52 "micko.l"
-{ yylval.i = AND; return _LOGOP; }
+{ return _AND; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 #line 53 "micko.l"
-{ yylval.i = OR; return _LOGOP; }
+{ return _OR;  }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP

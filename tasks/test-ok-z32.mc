@@ -1,5 +1,5 @@
 //OPIS: inkrement na vise mesta
-//RETURN: 330
+//RETURN: 190
 
 int y;
 
@@ -14,9 +14,9 @@ int f(int a) {
 int main() {
     int x;
     int z;
-    x = f(0);
-    y = f(x++ + 3);
-    z = x++ + y++ + 42;
-    return x + y + z;
+    x = f(0); // 34
+    y = f(3); // 40
+    z = x++ + y++ + 42; // 116
+    return x + y + z; // 190
 }
 

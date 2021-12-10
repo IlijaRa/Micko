@@ -75,8 +75,9 @@ extern int yydebug;
     _THREE = 285,
     _OTHER = 286,
     _END_BRANCH = 287,
-    _TAB_ENTER = 288,
-    ONLY_IF = 289
+    _AND = 288,
+    _OR = 289,
+    ONLY_IF = 290
   };
 #endif
 
@@ -85,12 +86,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 53 "micko.y" /* yacc.c:1909  */
+#line 74 "micko.y" /* yacc.c:1909  */
 
   int i;
   char *s;
 
-#line 94 "micko.tab.h" /* yacc.c:1909  */
+#line 95 "micko.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
