@@ -108,3 +108,18 @@ Tests should contain a comment at the top in the following format:
 https://user-images.githubusercontent.com/64584067/148304853-da925893-f599-4f5f-8adb-4b2276575644.mp4
 
 
+# Current state:
+The features that are currently implemented are as follows:
+- Single line comments
+- Multiline comments
+- Declaration of several variables in one line
+- Postincrement (++)
+- Void type (just for functions)
+- Functions with several parameters
+- Global variables
+- Ternary operator
+- If statement
+- And&Or logical operators
+- Special for statement
+- Branch statement
+- Loop statement
