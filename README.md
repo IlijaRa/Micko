@@ -89,15 +89,15 @@ there are some helpful functions. Function headers are given in the codegen.h fi
 
 # GK compilation
 
-As before, the solution is compiled and run as follows: 
+As before, the solution is compiled and run as follows: <br />
  make <br />
  ./micko < ulaz.mc <br />
 If there were no code errors, the compiler generates assembly code in the output.asm file.
-The resulting file should be forwarded to the simulator:
+The resulting file should be forwarded to the simulator:<br />
  ./hipsim -r < output.asm <br />
 The simulator will execute the program and print the return value of the main function.
 If the -r option is not specified when calling the simulator, interactive execution will be started, which can be convenient for debugging solutions.
-Also, it is possible to run all tests automatically, using the following command:
+Also, it is possible to run all tests automatically, using the following command: <br />
   make test <br />
 
 Tests should contain a comment at the top in the following format:
