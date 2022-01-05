@@ -8,7 +8,7 @@
   
   #define MAXVALUE 5
   #define MAXROW 20
-  #define MAXCOL 6
+  #define MAXCOL 11
   #define MAX_INCL_ARRAY 10
 
   int yyparse(void);
@@ -69,6 +69,16 @@
   int branch_lab_num = -1; // belezi broj labela za branch_statement
   int for_ids_storage[] = {-1}; // skladisti indexe id-a koji figurisu u for-u
   int for_counter = 0; // counter za for_ids_storage
+
+  int free_this_reg = -1;
+
+  // pyfor
+  int loop_num = 0;
+  int loop_lab_num = -1;
+  int lower_limit = 0;
+  int upper_limit = 0;
+  int step = 0;
+
 %}
 
 %union {
@@ -108,8 +118,10 @@
 %token _END_BRANCH
 %token _AND
 %token _OR
+%token _LOOP
+%token _IN
 
-%type <i> num_exp cond_exp exp literal log_exp_and log_exp_or step_part
+%type <i> num_exp exp literal log_exp_and log_exp_or step_part
 %type <i> function_call argument rel_exp if_part
 
 %nonassoc ONLY_IF
@@ -189,6 +201,7 @@ function
         code("\n\t\tPUSH\t%%14");
         code("\n\t\tMOV \t%%15,%%14");
       }
+
     _LPAREN parameter _RPAREN body
       {
         clear_symbols(fun_idx + 1);
@@ -345,12 +358,15 @@ statement_list
 statement
   : compound_statement
   | assignment_statement
-  | if_statement
+  | if_statement { free_reg(); }
   | return_statement
   | increment_statement
   | for_statement
   | branch_statement
+  | loop_statement
   ;
+
+
 
 for_statement
   : _FOR _LPAREN 
@@ -388,11 +404,15 @@ for_statement
     statement
     {
         int id_idx=lookup_symbol($4, VAR|PAR);
-	
+	int lit1= atoi(get_name($6));
+	int lit2= atoi(get_name($9));
+	int lit3= atoi(get_name($10));
 	if(id_idx == NO_INDEX)
 	  err("'%s' in for statement is undeclared", $4);
 	
 	if($10 != -1){// ovo znaci da ima step_part
+	  if(lit2 < lit3)
+	    err("Step is greater than upper boundary");
 	  if(get_type($6) != get_type(id_idx) 	  || 
 	     get_type($9) != get_type(id_idx) 	  || 
 	     get_type($10) != get_type(id_idx))
@@ -404,8 +424,6 @@ for_statement
 	       err("incompatible types in for statement");
 	}
 	
-	int lit1= atoi(get_name($6));
-	int lit2= atoi(get_name($9));
 	if(lit1>=lit2)
 	  err("Wrong boundary values in for statement");
 	
@@ -511,6 +529,125 @@ branches
     _OTHER { code("\n@other%d:", branch_lab_num); }
      statement //{ code("\n\t\tJMP\t@end_branch%d", lab_num); }
   ;
+
+//-------------------------
+// Dodatni zadatak
+loop_statement
+  : _LOOP _TYPE _ID _IN _LPAREN literal _COLON literal _STEP literal _RPAREN
+  	{
+  		$<i>$ = ++loop_lab_num;
+  		if($2 == 3) 
+		  err("variable cannot use type 'void'");
+  		if(lookup_symbol($3, VAR) == NO_INDEX)
+           	  insert_symbol($3, VAR, $2, NO_ATR, NO_ATR); 
+		
+        	loop_num++;
+        //printf("pozvan loop iskaz, broj iskaza = %d\n", loop_num);
+        //else err("redefinition of '%s'", $3);
+  		if($2 != get_type($6) || $2 != get_type($8) || $2 != get_type($10))
+  			err("Variable types don't match");
+  		//print_symtab();
+  	//generisanje koda	
+  		if(atoi(get_name($8)) >= atoi(get_name($6)))
+  		{
+  			lower_limit = take_reg();
+  			set_type(lower_limit, get_type($6));
+  			//gen_mov($6, lower_limit);
+  			code("\n\t\tMOV \t$%d,", atoi(get_name($6)));
+  			gen_sym_name(lower_limit);
+  			
+  			upper_limit = take_reg();
+  			set_type(upper_limit, get_type($8));
+  			//gen_mov($8, upper_limit);
+  			code("\n\t\tMOV \t$%d,", atoi(get_name($8)));
+  			gen_sym_name(upper_limit);
+  			
+  			step = take_reg();
+  			set_type(step, get_type($10));
+  			//gen_mov($10, step);
+  			code("\n\t\tMOV \t$%d,", atoi(get_name($10)));
+  			gen_sym_name(step);
+  			
+  			code("\n@loop%d:", loop_lab_num);
+  			//gen_cmp(upper_limit, lower_limit);
+  			if(get_type(upper_limit) == INT)
+				code("\n\t\tCMPS \t");
+			  else
+				code("\n\t\tCMPU \t");
+			gen_sym_name(upper_limit);
+			code(",");
+			gen_sym_name(lower_limit);
+  			code("\n\t\t%s\t@loopexit%d", opp_jumps[3 + ((get_type($6) - 1) * RELOP_NUMBER)], loop_lab_num);
+  				
+  			int idx = lookup_symbol($3, VAR);
+  			code("\n\t\tMOV \t%%%d,", lower_limit);
+  			gen_sym_name(idx);
+  			code("\n\t\t%s\t", ar_instructions[ADD + (get_type($6) - 1) * AROP_NUMBER]);
+	  		gen_sym_name(lower_limit);
+	  		code(",");
+	  		gen_sym_name(step);
+	  		code(",");
+	  		gen_sym_name(lower_limit);
+  		}
+  		else
+  		{
+  			upper_limit = take_reg();
+  			set_type(upper_limit, get_type($6));
+  			//gen_mov($8, upper_limit);
+  			code("\n\t\tMOV \t$%d,", atoi(get_name($6)));
+  			gen_sym_name(upper_limit);
+  			
+  			lower_limit = take_reg();
+  			set_type(lower_limit, get_type($8));
+  			//gen_mov($6, lower_limit);
+  			code("\n\t\tMOV \t$%d,", atoi(get_name($8)));
+  			gen_sym_name(lower_limit);
+  			
+  			step = take_reg();
+  			set_type(step, get_type($10));
+  			//gen_mov($10, step);
+  			code("\n\t\tMOV \t$%d,", atoi(get_name($10)));
+  			gen_sym_name(step);
+  			
+  			code("\n@loop%d:", loop_lab_num);
+  			//gen_cmp(lower_limit, upper_limit);
+  			if(get_type(lower_limit) == INT)
+				code("\n\t\tCMPS \t");
+			  else
+				code("\n\t\tCMPU \t");
+			gen_sym_name(lower_limit);
+			code(",");
+			gen_sym_name(upper_limit);
+  			code("\n\t\t%s\t@loopexit%d", opp_jumps[2 + ((get_type($6) - 1) * RELOP_NUMBER)], loop_lab_num);
+  				
+  			int idx = lookup_symbol($3, VAR);
+  			code("\n\t\tMOV \t%%%d,", upper_limit);
+  			gen_sym_name(idx);
+  			code("\n\t\t%s\t", ar_instructions[SUB + (get_type($6) - 1) * AROP_NUMBER]);
+	  		gen_sym_name(upper_limit);
+	  		code(",");
+	  		gen_sym_name(step);
+	  		code(",");
+	  		gen_sym_name(upper_limit);
+  		}
+  		
+    }
+    statement
+    {
+    	if(loop_num == 0)
+    		clear_symbols(lookup_symbol($3, PAR));
+    	else
+    		loop_num--;
+    	//printf("broj for iskaza nakon zavrsetka jednog = %d\n", loop_num);
+    	code("\n\t\tJMP \t@loop%d", $<i>12);
+    	code("\n@loopexit%d:", $<i>12);
+    	free_if_reg(upper_limit);
+    	free_if_reg(lower_limit);
+    	free_if_reg(step);
+    }
+  ;
+//-------------------------
+
 
 increment_statement
   : _ID 
@@ -754,8 +891,8 @@ exp
 
   | _ID
       {
-        $$ = lookup_symbol($1, VAR|PAR|GVAR);
-        if($$ == NO_INDEX)
+        //$$ = lookup_symbol($1, VAR|PAR|GVAR);
+        if(($$ = lookup_symbol($1, (VAR|PAR|GVAR))) == -1)
           err("'%s' undeclared", $1);
       }
   | _ID _INCREMENT
@@ -789,35 +926,34 @@ exp
   | _LPAREN num_exp _RPAREN
       { $$ = $2; }
   
-  | _LPAREN rel_exp _RPAREN _QMARK cond_exp _COLON cond_exp
-      {
- 
-	int out = take_reg();
-	lab_num++;
-  	if(get_type($5) != get_type($7))
-	  err("incompatible type for condition terms");
-  	
-	code("\n\t\t%s\t@false%d", opp_jumps[$2],lab_num);
-	code("\n@true%d:", lab_num);
-	gen_mov($5, out);
-	code("\n\t\tJMP \t@exit%d", lab_num);
- 
-  	code("\n@false%d:", lab_num);
-	gen_mov($7, out);
-  	code("\n@exit%d:", lab_num);
- 
-	$$ = out; //ovaj registar ce biti oslobodjen u MOV naredbi iz iskaza dodele
-      }
+  | _LPAREN log_exp_or _RPAREN _QMARK exp _COLON exp
+	  {
+		if(get_type($5) != get_type($7)){
+		  err("exps are not the same type!");
+		}
+		lab_num++;
+		$$ = take_reg();
+		code("\n\t\tCMPS\t$0,");
+		gen_sym_name($$-1);
+		code("\n\t\t%s\t@false%d", opp_jumps[5], lab_num);
+		code("\n@true%d:", lab_num);
+		gen_mov($5, $$);
+		code("\n\t\tJMP \t@exit%d", lab_num);
+		code("\n@false%d:", lab_num);
+		gen_mov($7, $$);
+		code("\n@exit%d:", lab_num);
+		free_this_reg = $$;
+	  }
   ;
 
-cond_exp
+/*cond_exp
   : _ID
       {
 	if( ($$ = lookup_symbol($1, (GVAR|VAR|PAR))) == NO_INDEX )
 	  err("'%s' undeclared", $1);
       }
   | literal
-  ;
+  ;*/
 
 literal
   : _INT_NUMBER
@@ -910,47 +1046,65 @@ if_part
   : _IF _LPAREN
       {
         $<i>$ = ++lab_num;
-        code("\n@if%d:", lab_num);
+        code("\n\n\n@if%d:", lab_num);
       }
-    log_exp_or 
+    log_exp_or
       {
-	if(log_part == 0){
-	  code("\n\t\t%s\t@false%d", opp_jumps[single_relexp], $<i>3); 
-	}
-	/*else{
-	  code("\n\t\tCMPS\t");
-          gen_sym_name($4);
-          code(",$1");
-          code("\n\t\tJNE \t@false%d", $<i>3);
-	}*/
-	single_relexp = 0;
-
-	//if(or_used == 1)
-	  //code("\n\t\tJMP\t@false%d", lab_num);
+        //code("\n\t\t%s\t@false%d", opp_jumps[$4], $<i>3);
+        code("\n\t\tCMPS\t");
+        gen_sym_name($4);
+        code(",$1");
+        code("\n\t\tJNE \t@false%d", $<i>3);
         code("\n@true%d:", $<i>3);
-
       }
-    _RPAREN statement 
+    _RPAREN statement
       {
         code("\n\t\tJMP \t@exit%d", $<i>3);
-	code("\n@false%d:", $<i>3);
+        code("\n@false%d:", $<i>3);
         $$ = $<i>3;
-      } 
+      }
   ;
 
-/*
+log_exp_and
+  : rel_exp
+  | log_exp_and _AND rel_exp
+  	{
+  		/*++lab_num;
+  		code("\n\t\tCMPS\t");
+        gen_sym_name($1);
+        code(",$1");
+  		code("\n\t\tJNE \t@false%d", lab_num);
+  		code("\n\t\tCMPS\t");
+        gen_sym_name($3);
+        code(",$1");
+  		code("\n\t\tJEQ \t@exit%d", lab_num);
+  		code("\n@false%d:", lab_num);
+  		code("\n\t\tMOV \t$0,");
+  		gen_sym_name($1);
+  		code("\n@exit%d:", lab_num);*/
+  		code("\n\t\tMULS\t");
+  		gen_sym_name($1);
+  		code(",");
+  		gen_sym_name($3);
+  		code(",");
+  		gen_sym_name($1);
+  		free_if_reg($3);
+  		$$ = $1;
+  	}
+  ;
+  
 log_exp_or
-  : log_exp_and {$$ = $1;}
+  : log_exp_and
   | log_exp_or _OR log_exp_and
   	{
   		++lab_num;
   		code("\n\t\tCMPS\t");
-      gen_sym_name($1);
-      code(",$1");
+        gen_sym_name($1);
+        code(",$1");
   		code("\n\t\tJEQ \t@true%d", lab_num);
   		code("\n\t\tCMPS\t");
-      gen_sym_name($3);
-      code(",$1");
+        gen_sym_name($3);
+        code(",$1");
   		code("\n\t\tJNE \t@exit%d", lab_num);
   		code("\n@true%d:", lab_num);
   		code("\n\t\tMOV \t$1,");
@@ -958,182 +1112,31 @@ log_exp_or
   		code("\n@exit%d:", lab_num);
   		free_if_reg($3);
   		$$ = $1;
-		
-				
-		for(int i = 0; i < reg_var_counter; i++){
-		  reg_var[i] = -1;
-		}
-		reg_var_counter = 0;
   	}
   ;
-
-log_exp_and
-  : rel_exp
-  | log_exp_and _AND rel_exp
-  	{
-  		++lab_num;
-  		code("\n\t\tCMPS\t");
-      gen_sym_name(reg_var[0]);
-      code(",$1");
-  		code("\n\t\tJNE \t@false%d", lab_num);
-  		code("\n\t\tCMPS\t");
-      gen_sym_name(reg_var[1]);
-      code(",$1");
-  		code("\n\t\tJEQ \t@exit%d", lab_num);
-  		code("\n@false%d:", lab_num);
-  		code("\n\t\tMOV \t$0,");
-  		gen_sym_name(reg_var[0]);
-  		code("\n@exit%d:", lab_num);
-  		free_if_reg(reg_var[1]);
-  		$$ = $1;
-
-  	}
-  ;
-*/
-
-log_exp_or
-  : log_exp_and 
-    {
-	if($<i>1 == 1)
-	  $<i>$ = 1;
-    }
-  | log_exp_or 
-    {
-        if($1 == 1){
-	  code("\n\t\t%s\t@true%d", jumps[single_relexp], lab_num);
-	}
-	//else
-	  //code("\n\t\t%s\t@true%d", jumps[single_relexp], lab_num);
-    }
-    _OR log_exp_and
-    {
-	if($<i>4 == 1)
-	  code("\n\t\t%s\t@true%d", jumps[single_relexp], lab_num);
-	log_part = 1;
-	or_used = 1;
-    }
-  ;
-
-log_exp_and
-  : rel_exp 
-    { 
-    	log_part = 0;
-	single_relexp = $1; 
-	$<i>$ = 1;
-    }
-  | log_exp_and 
-    {
-	if($<i>1 == 1){
-	  code("\n\t\t%s\t@false%d", opp_jumps[single_relexp], lab_num);
-	}
-    }
-    _AND rel_exp
-    {
-	log_part = 1;
-  	code("\n\t\t%s\t@false%d", opp_jumps[$4], lab_num);
-	$<i>$ = $4; // vraca vrednost formule
-    }
-  ;
-
 
 rel_exp
   : num_exp _RELOP num_exp
       {
-	//++lab_num; // naknadno
+      	++lab_num;
         if(get_type($1) != get_type($3))
           err("invalid operands: relational operator");
-        $$ = $2 + ((get_type($1) - 1) * RELOP_NUMBER);
-
-	//reg_var[reg_var_counter] = take_reg(); // naknadno
-
-	if(get_kind($1) == PAR && get_kind($3) == PAR){
-	
-	    int place1 = (get_atr1(fun_idx)-get_atr1($1))*4 + 4;
-	    int place2 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
-	    
-	    if(get_type($1) == INT && get_type($3) == INT)
-	      code("\n\t\tCMPS\t");
+        $$ = take_reg();
+        if(get_type($1) == INT)
+			code("\n\t\tCMPS \t");
 	    else
-  	      code("\n\t\tCMPU\t");
-	    code("%d(%%14)", place1);
-	    code(",");
-	    code("%d(%%14)", place2);
-	    /*//naknadno----------------------------------
-	     	code("\n\t\t%s\t@false%d", opp_jumps[$$], lab_num);
-        	code("\n\t\tMOV \t$1,");
-        	gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n\t\tJMP \t@exit%d", lab_num);
-        	code("\n@false%d:", lab_num);
-       		code("\n\t\tMOV \t$0,");
-       		gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n@exit%d:", lab_num);
-	    //------------------------------------------*/
-
-	  }
-	  else if(get_kind($1) != PAR && get_kind($3) != PAR){
-	    gen_cmp($1, $3);
-	    /*//naknadno----------------------------------
-	    if(get_type($1) == INT && get_type($3) == INT)
-	      code("\n\t\tCMPS\t");
-	    else
-  	      code("\n\t\tCMPU\t");
-	    gen_sym_name($1);
-            code(",");
-            gen_sym_name($3);
-	     	code("\n\t\t%s\t@false%d", opp_jumps[$$], lab_num);
-        	code("\n\t\tMOV \t$1,");
-        	gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n\t\tJMP \t@exit%d", lab_num);
-        	code("\n@false%d:", lab_num);
-       		code("\n\t\tMOV \t$0,");
-       		gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n@exit%d:", lab_num);
-	    //------------------------------------------*/
-	  }
-	  else if(get_kind($1) == PAR && get_kind($3) != PAR){
-	    int place1 = (get_atr1(fun_idx)-get_atr1($1))*4 + 4;
-	    
-	    if(get_type($1) == INT && get_type($3) == INT)
-	      code("\n\t\tCMPS\t");
-	    else
-  	      code("\n\t\tCMPU\t");
-	    code("%d(%%14)", place1);
-	    code(",");
-	    gen_sym_name($3);
-	    /*//naknadno----------------------------------
-	     	code("\n\t\t%s\t@false%d", opp_jumps[$$], lab_num);
-        	code("\n\t\tMOV \t$1,");
-        	gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n\t\tJMP \t@exit%d", lab_num);
-        	code("\n@false%d:", lab_num);
-       		code("\n\t\tMOV \t$0,");
-       		gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n@exit%d:", lab_num);
-	    //------------------------------------------*/
-	  }
-	  else if(get_kind($1) != PAR && get_kind($3) == PAR){
-	    int place2 = (get_atr1(fun_idx)-get_atr1($3))*4 + 4;
-	    
-	    if(get_type($1) == INT && get_type($3) == INT)
-	      code("\n\t\tCMPS\t");
-	    else
-  	      code("\n\t\tCMPU\t");
-	    gen_sym_name($1);
-	    code(",");
-	    code("%d(%%14)", place2);
-	    /*//naknadno----------------------------------
-	     	code("\n\t\t%s\t@false%d", opp_jumps[$$], lab_num);
-        	code("\n\t\tMOV \t$1,");
-        	gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n\t\tJMP \t@exit%d", lab_num);
-        	code("\n@false%d:", lab_num);
-       		code("\n\t\tMOV \t$0,");
-       		gen_sym_name(reg_var[reg_var_counter]);
-        	code("\n@exit%d:", lab_num);
-	    //------------------------------------------*/
-	  }	
-	//reg_var_counter++; // naknadno
-        //gen_cmp($1, $3);
+			code("\n\t\tCMPU \t");
+        gen_sym_name($1);
+        code(",");
+        gen_sym_name($3);
+        code("\n\t\t%s\t@false%d", opp_jumps[$2 + ((get_type($1) - 1) * RELOP_NUMBER)], lab_num); //biram kontra slucaj postavljenog relacionog izraza i ako je zadovoljen skacem na false
+        code("\n\t\tMOV \t$1,");
+        gen_sym_name($$);
+        code("\n\t\tJMP \t@exit%d", lab_num);
+        code("\n@false%d:", lab_num);
+       	code("\n\t\tMOV \t$0,");
+       	gen_sym_name($$);
+        code("\n@exit%d:", lab_num);
       }
   ;
 

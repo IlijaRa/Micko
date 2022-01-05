@@ -17,9 +17,12 @@
 "else"               { return _ELSE; }
 "return"             { return _RETURN; }
 
-"for"		     { return _FOR; }
-"to"		     { return _TO; }
+"for"		     { return _FOR;  }
+"to"		     { return _TO;   }
 "step"		     { return _STEP; }
+
+"loop"		     { return _LOOP; }
+"in"                 { return _IN;   }
 
 "branch"	     { return _BRANCH; }
 "one"		     { return _ONE; }
