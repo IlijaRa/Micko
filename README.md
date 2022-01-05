@@ -51,3 +51,20 @@ that accidentally changed the original grammar. Would be nice to have this type 
 All tests should have an extension of your programming language.
 Once the tests are done, you just need to type the following command:
     make test
+
+# Generating code
+Code generation is done by calling the code macro. These macros are used in the same way as macros
+err, warn, or printf function. The difference is that the macro code does not print the transmitted ones
+arguments to standard output.Arguments are transmitted into the output.asm file, which will be containing 
+generated assembly program.
+
+# Hypothetical assembler
+A hypothetical assembly language is not an assembly language that can be executed directly on a computer,
+such programs are already running in the simulator — Hipsim.
+In order to be able to create appropriate assembly programs, it is necessary to get familiar with the registers that Hipsim has.
+
+## Register                            Purpose
+### %0, %1, ..., %12                    General purpose registers
+### %13                                 Return value is stored in this register
+### %14                                 Stack frame pointer
+### %15                                 Top of the stack pointer
