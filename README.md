@@ -5,7 +5,7 @@ Tools used:
 3. GCC
 4. GNU make
 5. Text editor
----------------------------------------------------*FLEX*--------------------------------------------------------
+#Flex
 FLEX is a program that generates a lexical analyzer or scanner. Flex reads input rules and as
 output returns the code implemented by the lector in the C programming language. It was created in 1987 as
 free version of Lex. It is available under a modified BSD license, and its original
@@ -14,7 +14,7 @@ The goal of the lexical analyzer is to scan the token sequence in the input text
 certain templates. When a pattern is recognized, the specified action is performed. Templates are set in mind
 regular expressions.
 
----------------------------------------------------*BISON*--------------------------------------------------------
+#Bison
 Bison is a program that generates a parser. Bison reads the entry rules as well
 the output returns the code implemented by the parser in the C programming language. It was created in 1985 as
 free version of Yacc. It is available as part of the GNU Project, under the GNU General Public
