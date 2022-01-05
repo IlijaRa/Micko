@@ -63,8 +63,10 @@ A hypothetical assembly language is not an assembly language that can be execute
 such programs are already running in the simulator — Hipsim.
 In order to be able to create appropriate assembly programs, it is necessary to get familiar with the registers that Hipsim has.
 
-Register                            Purpose
-%0, %1, ..., %12                    General purpose registers
-%13                                 Return value is stored in this register
-%14                                 Stack frame pointer
-%15                                 Top of the stack pointer
+
+| Register          | Purpose                                  |
+| ------------------| -----------------------------------------|
+| %0, %1, ..., %12  | General purpose registers                |
+| %13               | Return value is stored in this register  |
+| %14               | Stack frame pointer                      |
+| %15               | Top of the stack pointer                 |
