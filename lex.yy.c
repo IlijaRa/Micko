@@ -413,15 +413,15 @@ static yyconst flex_int16_t yy_accept[132] =
        39,   39,   39,   39,   39,   39,   39,   39,   39,   39,
        39,   39,   39,   21,   22,    1,   36,   28,   40,    0,
        42,   40,   41,   33,   35,   34,   39,   39,   39,   39,
-       39,   39,    5,   12,   39,   39,   38,   39,   39,   39,
+       39,   39,    5,   18,   39,   39,   38,   39,   39,   39,
        39,    9,   39,   39,   39,   40,    0,    0,    0,   42,
-       40,   37,   39,   39,   39,    8,    2,   39,   14,   39,
-       39,   39,   39,   15,   39,   39,   40,    0,    0,   43,
-       40,   39,    6,    0,   11,   39,   39,   10,   39,   39,
+       40,   37,   39,   39,   39,    8,    2,   39,   12,   39,
+       39,   39,   39,   13,   39,   39,   40,    0,    0,   43,
+       40,   39,    6,    0,   17,   39,   39,   10,   39,   39,
 
-        4,   40,   40,   39,    0,   17,   39,   16,   39,   40,
-       40,   13,    0,    7,   39,   40,   40,    0,   39,   40,
-       40,    0,    3,   40,   40,    0,   40,   40,   18,   40,
+        4,   40,   40,   39,    0,   15,   39,   14,   39,   40,
+       40,   11,    0,    7,   39,   40,   40,    0,   39,   40,
+       40,    0,    3,   40,   40,    0,   40,   40,   16,   40,
         0
     } ;
 
@@ -929,42 +929,42 @@ YY_RULE_SETUP
 case 11:
 YY_RULE_SETUP
 #line 24 "micko.l"
-{ return _LOOP; }
+{ return _BRANCH; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 25 "micko.l"
-{ return _IN;   }
+{ return _ONE; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 27 "micko.l"
-{ return _BRANCH; }
+#line 26 "micko.l"
+{ return _TWO; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 28 "micko.l"
-{ return _ONE; }
+#line 27 "micko.l"
+{ return _THREE; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 29 "micko.l"
-{ return _TWO; }
+#line 28 "micko.l"
+{ return _OTHER; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 30 "micko.l"
-{ return _THREE; }
+#line 29 "micko.l"
+{ return _END_BRANCH; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 31 "micko.l"
-{ return _OTHER; }
+{ return _LOOP; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 32 "micko.l"
-{ return _END_BRANCH; }
+{ return _IN;   }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP

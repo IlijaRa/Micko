@@ -72,12 +72,15 @@
 
   int free_this_reg = -1;
 
-  // pyfor
+  // loop
   int loop_num = 0;
   int loop_lab_num = -1;
   int lower_limit = 0;
   int upper_limit = 0;
   int step = 0;
+
+  // repeat
+  int repeat_lab_num = 0;
 
 %}
 
@@ -531,7 +534,7 @@ branches
   ;
 
 //-------------------------
-// Dodatni zadatak
+// Dodatni zadatak 1.
 loop_statement
   : _LOOP _TYPE _ID _IN _LPAREN literal _COLON literal _STEP literal _RPAREN
   	{
@@ -646,6 +649,7 @@ loop_statement
     	free_if_reg(step);
     }
   ;
+
 //-------------------------
 
 

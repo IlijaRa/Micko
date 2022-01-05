@@ -21,15 +21,15 @@
 "to"		     { return _TO;   }
 "step"		     { return _STEP; }
 
-"loop"		     { return _LOOP; }
-"in"                 { return _IN;   }
-
 "branch"	     { return _BRANCH; }
 "one"		     { return _ONE; }
 "two"		     { return _TWO; }
 "three"		     { return _THREE; }
 "other"		     { return _OTHER; }
 "end_branch"	     { return _END_BRANCH; }
+
+"loop"		     { return _LOOP; }
+"in"                 { return _IN;   }
 
 "("                  { return _LPAREN; }
 ")"                  { return _RPAREN; }
