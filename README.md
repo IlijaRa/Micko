@@ -1,4 +1,3 @@
-# miniCCompiler
 Tools used:
 1. Flex
 2. Bison
@@ -25,7 +24,7 @@ Bison is often used in combination with Flex to make compilers. Lexical analysis
 recognize patterns in the text and the text is divided into tokens, and then syntactic analysis checks that
 whether the tokens are in the correct order.
 
-*Manual compilation*
+## Manual compilation
 1. The .y file must be passed to Bison:
    bison -d *.y
 2. The .l file must be passed to Flex:
@@ -35,7 +34,7 @@ whether the tokens are in the correct order.
 4. Run the resulting executable program as follows:
    ./parser
 
-*Compilation with make tool*
+## Compilation with make tool
 As you can see, the compilation process requires manually invoking as many as 3 different tools. In order to simplify 
 the process, the Makefile file is enabled. Therefore, all you have to do is call the following command:
    make
