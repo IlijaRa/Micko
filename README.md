@@ -1,4 +1,4 @@
-Tools used:
+### Tools used:
 1. Flex
 2. Bison
 3. GCC
@@ -32,13 +32,11 @@ whether the tokens are in the correct order.
 
 ## Compilation with make tool
 As you can see, the compilation process requires manually invoking as many as 3 different tools. In order to simplify 
-the process, the Makefile file is enabled. Therefore, all you have to do is call the following command:
-### make
+the process, the Makefile file is enabled. Therefore, all you have to do is call the following command: make
 
 ## Tests
 To avoid typing a test example manually each time you test something, it is possible to type an example in a file, 
-and then use redirection to forward that file to standard program input:
-### ./syntax < input_file
+and then use redirection to forward that file to standard program input: ./syntax < input_file
 Also, the Makefile is designed so that it can automatically call all written tests at once, but the test files need to be 
 named in the following format:
 
