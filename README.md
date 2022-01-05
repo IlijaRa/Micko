@@ -85,3 +85,20 @@ there are some helpful functions. Function headers are given in the codegen.h fi
 |void gen_sym_name(int index);                         | Prints the symbol on the forwarded index in the symbol table. The function prints the symbol in an appropriate form, depending on its type.                                                                                                                                                          |
 |void gen_cmp(int operand1_index, int operand2_index); | Generates a complete CMP command.                                                                                      |
 |void gen_mov(int input_index, int output_index);      | Generates a complete MOV command.                                                                                      |
+
+
+# GK compilation
+
+As before, the solution is compiled and run as follows: 
+> make
+> ./micko < ulaz.mc
+If there were no code errors, the compiler generates assembly code in the output.asm file.
+The resulting file should be forwarded to the simulator:
+> ./hipsim -r < output.asm
+The simulator will execute the program and print the return value of the main function.
+If the -r option is not specified when calling the simulator, interactive execution will be started, which can be convenient for debugging solutions.
+Also, it is possible to run all tests automatically, using the following command:
+> make test
+
+Tests should contain a comment at the top in the following format:
+//RETURN: expected_value
