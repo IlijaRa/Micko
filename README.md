@@ -77,8 +77,9 @@ As already mentioned, generating code comes down to printing equivalent assemble
 Absolutely anything can be done just by using this macro, however, to make it easier to generate, 
 there are some helpful functions. Function headers are given in the codegen.h file:
 
-|int take_reg(void);                                   | Occupies the first free register and returns its index in the symbol table.                                            |
+|     Function                                         | Description                                                                                                            |
 |------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+|int take_reg(void);                                   | Occupies the first free register and returns its index in the symbol table.                                            |
 |void free_reg(void);                                  | Releases the last occupied registry.                                                                                   |
 |void free_if_reg(int reg_index);                      | Releases the registry whose index was passed.                                                                          |
 |void gen_sym_name(int index);                         | Prints the symbol on the forwarded index in the symbol table. The function prints the symbol in an appropriate form, depending on its type.                                                                                                                                                          |
