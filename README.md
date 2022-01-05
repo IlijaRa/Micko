@@ -91,7 +91,7 @@ there are some helpful functions. Function headers are given in the codegen.h fi
 
 As before, the solution is compiled and run as follows: <br />
  make <br />
- ./micko < ulaz.mc <br />
+ ./micko < input_file.mc <br />
 If there were no code errors, the compiler generates assembly code in the output.asm file.
 The resulting file should be forwarded to the simulator:<br />
  ./hipsim -r < output.asm <br />
@@ -102,3 +102,9 @@ Also, it is possible to run all tests automatically, using the following command
 
 Tests should contain a comment at the top in the following format:
 //RETURN: expected_value
+
+
+
+https://user-images.githubusercontent.com/64584067/148304853-da925893-f599-4f5f-8adb-4b2276575644.mp4
+
+
