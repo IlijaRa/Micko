@@ -78,8 +78,14 @@ Absolutely anything can be done just by using this macro, however, to make it ea
 there are some helpful functions. Function headers are given in the codegen.h file:
 
 |int take_reg(void);                                   | Occupies the first free register and returns its index in the symbol table.                                            |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
 |void free_reg(void);                                  | Releases the last occupied registry.                                                                                   |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
 |void free_if_reg(int reg_index);                      | Releases the registry whose index was passed.                                                                          |
-|void gen_sym_name(int index);                         | Prints the symbol on the forwarded index in the symbol table. The function prints the symbol in an appropriate form, depending on its type. |
-|void gen_cmp(int operand1_index, int operand2_index); | Generates a complete CMP command.                                                                                      | 
-|void gen_mov(int input_index, int output_index);      | Generates a complete MOV command.                                                                                      |  
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+|void gen_sym_name(int index);                         | Prints the symbol on the forwarded index in the symbol table. The function prints the symbol in an appropriate form, depending on its type.                                                                                                                                                          |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+|void gen_cmp(int operand1_index, int operand2_index); | Generates a complete CMP command.                                                                                      |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+|void gen_mov(int input_index, int output_index);      | Generates a complete MOV command.                                                                                      |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
