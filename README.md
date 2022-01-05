@@ -1,4 +1,4 @@
-### Tools used:
+# Tools used:
 1. Flex
 2. Bison
 3. GCC
