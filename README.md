@@ -1,9 +1,10 @@
 # miniCCompiler
 Tools used:
-• Flex
-• Bison
-• GCC
-• GNU make
+1. Flex
+2. Bison
+3. GCC
+4. GNU make
+5. Text editor
 ---------------------------------------------------*FLEX*--------------------------------------------------------
 FLEX is a program that generates a lexical analyzer or scanner. Flex reads input rules and as
 output returns the code implemented by the lector in the C programming language. It was created in 1987 as
