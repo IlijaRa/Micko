@@ -123,3 +123,31 @@ The features that are currently implemented are as follows:
 - Special for statement
 - Branch statement
 - Loop statement
+
+# Examples:
+
+### For loop and If statement mixed together
+    for(i = 0 to 5){
+        if(a == f and b <= c and d != f){
+          if(d >= 0 or c <= 0){ 
+            if(a != e or 0 > d and d != f){
+              if(e < f or b <= c or d == f){
+                res++;
+              }
+            }
+          }
+        }
+     }
+     
+### Branch statement  
+At the beginning of the branch statement, the value of the variable "a" is checked.
+Depending on that value, if it is equal to 1, then branch ONE is executed, if it is equal to 3, 
+then branch TWO is executed, if it is equal to 10, branch THREE is executed.
+Branch OTHER is executed if variable "a" is non of this values.
+
+    branch ( a ; 1 , 3 , 10 )
+        one a = a + 1;
+        two a = a + 3;
+        three a = a + 5;
+        other a = a - 3;
+      end_branch// a = 15
