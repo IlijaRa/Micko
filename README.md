@@ -19,7 +19,7 @@ The features that are currently implemented are as follows:
 # Examples:
 
 ### For loop and If statement mixed together
-Very similar to the usual trick. But requires the iterator to be initialized before use.
+Very similar to the usual for loop. But requires the iterator to be initialized before use.
 
     for(i = 0 to 5){
         if(a == f and b <= c and d != f){
@@ -51,16 +51,13 @@ Order of the boundaries that are set does not create a problem in iteration.
 If iteration is set from higher to lower limit, the loop itself will know that it needs to go backwards. 
 It is more practical than the previous for loop because there is no requirement for iterator to be initialized before.
 
-    loop int i in (17 : 28 step 2)
-		a++;
-	loop int i in (1 : 5 step 2)
-	{
-		loop int j in (13 : 5 step 4)
-			c = c + j;
+    loop int i in (17 : 28 step 2){
+      a++;
+      loop int i in (1 : 5 step 2){
+        loop int j in (13 : 5 step 4){
+	  c = c + j;
 	}
-	loop int i in (17 : 28 step 2)
-		a++;
-
+    }
 
 # Tools used:
 1. Flex
