@@ -47,7 +47,7 @@ Branch OTHER is executed if variable "a" is non of this values.
       end_branch// a = 15
 
 ### Loop statement
-Order of the boundaries that are set does not create a problem in iteration. 
+Order of the boundaries that are set does not cause a problem in iteration. 
 If iteration is set from higher to lower limit, the loop itself will know that it needs to go backwards. 
 It is more practical than the previous for loop because there is no requirement for iterator to be initialized before.
 
