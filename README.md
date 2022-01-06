@@ -19,7 +19,7 @@ The features that are currently implemented are as follows:
 # Examples:
 
 ### For loop and If statement mixed together
-Very similar to the usual for loop. But requires the iterator to be initialized before use.
+Very similar to the usual for loop, but requires the iterator to be initialized before use and uses reserved word "to".
 
     for(i = 0 to 5){
         if(a == f and b <= c and d != f){
