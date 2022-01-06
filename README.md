@@ -1,3 +1,67 @@
+# Current state:
+The features that are currently implemented are as follows:
+- Primitive data types (int, unsigned only)
+- Single and multi line comments
+- Operators (+, - only)
+- Declaration of several variables in one line
+- Postincrement (++)
+- Functions
+- Void type (just for functions)
+- Functions with several parameters
+- Global variables
+- Ternary operator
+- Flow control (if/ if-else)
+- And&Or logical operators
+- Special for statement
+- Branch statement
+- Loop statement
+
+# Examples:
+
+### For loop and If statement mixed together
+Very similar to the usual trick. But requires the iterator to be initialized before use.
+
+    for(i = 0 to 5){
+        if(a == f and b <= c and d != f){
+          if(d >= 0 or c <= 0){ 
+            if(a != e or 0 > d and d != f){
+              if(e < f or b <= c or d == f){
+                res++;
+              }
+            }
+          }
+        }
+     }
+     
+### Branch statement  
+At the beginning of the branch statement, the value of the variable "a" is checked.
+Depending on that value, if it is equal to 1, then branch ONE is executed, if it is equal to 3, 
+then branch TWO is executed, if it is equal to 10, branch THREE is executed.
+Branch OTHER is executed if variable "a" is non of this values.
+
+    branch ( a ; 1 , 3 , 10 )
+        one a = a + 1;
+        two a = a + 3;
+        three a = a + 5;
+        other a = a - 3;
+      end_branch// a = 15
+
+### Loop statement
+Order of the boundaries that are set does not create a problem in iteration. 
+If iteration is set from higher to lower limit, the loop itself will know that it needs to go backwards. 
+It is more practical than the previous for loop because there is no requirement for iterator to be initialized before.
+
+    loop int i in (17 : 28 step 2)
+		a++;
+	loop int i in (1 : 5 step 2)
+	{
+		loop int j in (13 : 5 step 4)
+			c = c + j;
+	}
+	loop int i in (17 : 28 step 2)
+		a++;
+
+
 # Tools used:
 1. Flex
 2. Bison
@@ -106,48 +170,3 @@ Tests should contain a comment at the top in the following format:
 
 
 https://user-images.githubusercontent.com/64584067/148304853-da925893-f599-4f5f-8adb-4b2276575644.mp4
-
-
-# Current state:
-The features that are currently implemented are as follows:
-- Single line comments
-- Multiline comments
-- Declaration of several variables in one line
-- Postincrement (++)
-- Void type (just for functions)
-- Functions with several parameters
-- Global variables
-- Ternary operator
-- If statement
-- And&Or logical operators
-- Special for statement
-- Branch statement
-- Loop statement
-
-# Examples:
-
-### For loop and If statement mixed together
-    for(i = 0 to 5){
-        if(a == f and b <= c and d != f){
-          if(d >= 0 or c <= 0){ 
-            if(a != e or 0 > d and d != f){
-              if(e < f or b <= c or d == f){
-                res++;
-              }
-            }
-          }
-        }
-     }
-     
-### Branch statement  
-At the beginning of the branch statement, the value of the variable "a" is checked.
-Depending on that value, if it is equal to 1, then branch ONE is executed, if it is equal to 3, 
-then branch TWO is executed, if it is equal to 10, branch THREE is executed.
-Branch OTHER is executed if variable "a" is non of this values.
-
-    branch ( a ; 1 , 3 , 10 )
-        one a = a + 1;
-        two a = a + 3;
-        three a = a + 5;
-        other a = a - 3;
-      end_branch// a = 15
