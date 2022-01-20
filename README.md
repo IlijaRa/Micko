@@ -3,7 +3,7 @@ The features that are currently implemented are as follows:
 - Primitive data types (int, unsigned only)
 - Single and multi line comments
 - Operators (+, - only)
-- Declaration of several variables in one line
+- Initialization of several variables in one line
 - Postincrement (++)
 - Functions
 - Void type (just for functions)
