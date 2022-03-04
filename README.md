@@ -95,24 +95,6 @@ whether the tokens are in the correct order.
 As you can see, the compilation process requires manually invoking as many as 3 different tools. In order to simplify 
 the process, the Makefile file is enabled. Therefore, all you have to do is call the following command: make
 
-## Tests
-To avoid typing a test example manually each time you test something, it is possible to type an example in a file, 
-and then use redirection to forward that file to standard program input: ./syntax < input_file
-Also, the Makefile is designed so that it can automatically call all written tests at once, but the test files need to be 
-named in the following format:
-
-1. *test-sanity* - Tests that check the original grammar. These tests should always be passed, even if you are not
-start typing the solution to the task. If these tests do not pass, it means that you are solving a task
-that accidentally changed the original grammar. Would be nice to have this type for your project tests.
-
-2. *test-ok* - Tests that contain the correct program with the new one constructions.
-3. *test-synerr* - Tests that contain an incorrect program with one syntax error.
-4. *test-semerr* - Tests that contain an incorrect program with one semantic error.
-
-All tests should have an extension of your programming language.
-Once the tests are done, you just need to type the following command:
-    make test
-
 # Generating code
 Code generation is done by calling the code macro. These macros are used in the same way as macros
 err, warn, or printf function. The difference is that the macro code does not print the transmitted ones
@@ -147,6 +129,23 @@ there are some helpful functions. Function headers are given in the codegen.h fi
 |void gen_cmp(int operand1_index, int operand2_index); | Generates a complete CMP command.                                                                                      |
 |void gen_mov(int input_index, int output_index);      | Generates a complete MOV command.                                                                                      |
 
+## Tests
+To avoid typing a test example manually each time you test something, it is possible to type an example in a file, 
+and then use redirection to forward that file to standard program input: ./syntax < input_file
+Also, the Makefile is designed so that it can automatically call all written tests at once, but the test files need to be 
+named in the following format:
+
+1. *test-sanity* - Tests that check the original grammar. These tests should always be passed, even if you are not
+start typing the solution to the task. If these tests do not pass, it means that you are solving a task
+that accidentally changed the original grammar. Would be nice to have this type for your project tests.
+
+2. *test-ok* - Tests that contain the correct program with the new one constructions.
+3. *test-synerr* - Tests that contain an incorrect program with one syntax error.
+4. *test-semerr* - Tests that contain an incorrect program with one semantic error.
+
+All tests should have an extension of your programming language.
+Once the tests are done, you just need to type the following command:
+    make test
 
 # GK compilation
 
