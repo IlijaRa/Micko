@@ -44,7 +44,7 @@ Branch OTHER is executed if variable "a" is non of this values.
         two a = a + 3;
         three a = a + 5;
         other a = a - 3;
-      end_branch// a = 15
+    end_branch
 
 ### Loop statement
 Order of the boundaries that are set does not cause a problem in iteration. 
